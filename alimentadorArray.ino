@@ -1,5 +1,3 @@
-
-//código relógio rtc alimentador
 #include <Wire.h>
 #include "RTClib.h"
 #include <avr/wdt.h>
@@ -7,30 +5,28 @@
 RTC_DS1307 rtc;
 char hora[30];
 
-/// Hora da festa
+// Hora da festa
 int horaliga1 = 6;
 int horaliga2 = 18;
 int horaliga3 = 11;
 int horaliga4 = 9;
 int minlig = 40;
 
-/// liga dosadores
-int AL[] = {5, 6, 7};//5 e 6
+// Liga dosadores
+int AL[] = {5, 6, 7}; // 5 e 6
 
-/// define quantidade de tempo de acionamento dosadores
-int tempo[] = {0, 690, 300};//PEQUENO, MEDIO, GRANDE
+// Define quantidade de tempo de acionamento dosadores
+int tempo[] = {0, 690, 300}; // PEQUENO, MEDIO, GRANDE
 int cont;
 
-//tempo millis
+// Tempo millis
 const long interval = 1000;
 unsigned long previousMillis = 0;
 
-
-void relogio () {
-
+void relogio() {
   unsigned long currentMillis = millis();
   DateTime now = rtc.now();
-  sprintf( hora, "%02d:%02d:%02d", now.hour(), now.minute(), now.second() );
+  sprintf(hora, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
     Serial.println(hora);
@@ -38,23 +34,29 @@ void relogio () {
 }
 
 void doseracao() {
+  unsigned long startMillis = millis();
+  unsigned long elapsedMillis = 0;
+
   for (cont = 0; cont < 3; cont++) {
     digitalWrite(AL[cont], HIGH);
-    delay(tempo[cont]);
+    while (elapsedMillis < tempo[cont]) {
+      elapsedMillis = millis() - startMillis;
+      // Aqui você pode adicionar outras ações que precisam ocorrer durante a espera
+    }
     Serial.println("liga");
     digitalWrite(AL[cont], LOW);
-    Serial.println("deslig");
+    Serial.println("desliga");
     delay(2000);
   }
 }
 
-void executa () {
+void executa() {
   DateTime now = rtc.now();
- //trata todos
+  // Trata todos
   if ((((now.hour() == horaliga1) || (now.hour() == horaliga2) || (now.hour() == horaliga3)) && (now.minute() == minlig) && (now.second() <= 2))) {
     doseracao();
   }
-  //trata aquario 
+  // Trata aquario
   if ((((now.hour() == horaliga4)) && (now.minute() == minlig) && (now.second() <= 2))) {
     digitalWrite(AL[0], HIGH);
     delay(tempo[1]);
@@ -64,7 +66,7 @@ void executa () {
 }
 
 void setup() {
-  // inicializa os pinos AL como output:
+  // Inicializa os pinos AL como output:
   for (cont = 0; cont < 3; cont++) {
     pinMode(AL[cont], OUTPUT);
   }
@@ -77,15 +79,14 @@ void setup() {
 #endif
   rtc.begin();
 
-  if ( rtc.isrunning()) {
-   // Serial.println("RTC is NOT running!");
-    // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(__DATE__, __TIME__));
+  if (!rtc.isrunning()) {
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
-  wdt_enable(WDTO_8S); //Função que ativa e altera o Watchdog
+  wdt_enable(WDTO_8S);
 }
+
 void loop() {
-  executa ();
-  relogio ();
-  wdt_reset(); //diz que esta tudo ok
+  executa();
+  relogio();
+  wdt_reset();
 }
