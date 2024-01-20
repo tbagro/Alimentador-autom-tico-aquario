@@ -13,7 +13,7 @@ int horaliga4 = 9;
 int minlig = 40;
 
 // Liga dosadores
-int AL[] = {5, 6, 7}; // 5 e 6
+int AL[] = {5, 6, 7}; // Pinos dos dosadores
 
 // Define quantidade de tempo de acionamento dosadores
 int tempo[] = {0, 690, 300}; // PEQUENO, MEDIO, GRANDE
@@ -33,49 +33,39 @@ void relogio() {
   }
 }
 
-void doseracao() {
+void doseracao(int dosadorPin, int dosadorTempo) {
+  digitalWrite(dosadorPin, HIGH);
   unsigned long startMillis = millis();
-  unsigned long elapsedMillis = 0;
-
-  for (cont = 0; cont < 3; cont++) {
-    digitalWrite(AL[cont], HIGH);
-    while (elapsedMillis < tempo[cont]) {
-      elapsedMillis = millis() - startMillis;
-      // Aqui você pode adicionar outras ações que precisam ocorrer durante a espera
-    }
-    Serial.println("liga");
-    digitalWrite(AL[cont], LOW);
-    Serial.println("desliga");
-    delay(2000);
+  while (millis() - startMillis < dosadorTempo) {
+    // Aguarde o tempo do dosador
   }
+  digitalWrite(dosadorPin, LOW);
 }
 
 void executa() {
   DateTime now = rtc.now();
   // Trata todos
   if ((((now.hour() == horaliga1) || (now.hour() == horaliga2) || (now.hour() == horaliga3)) && (now.minute() == minlig) && (now.second() <= 2))) {
-    doseracao();
+    doseracao(AL[1], tempo[1]); // Executa dosador médio
   }
   // Trata aquario
   if ((((now.hour() == horaliga4)) && (now.minute() == minlig) && (now.second() <= 2))) {
-    digitalWrite(AL[0], HIGH);
-    delay(tempo[1]);
-    digitalWrite(AL[0], LOW);
-    delay(2000);
+    doseracao(AL[0], tempo[1]); // Executa dosador pequeno
   }
 }
 
 void setup() {
-  // Inicializa os pinos AL como output:
+  // Inicializa os pinos dos dosadores como output:
   for (cont = 0; cont < 3; cont++) {
     pinMode(AL[cont], OUTPUT);
+    digitalWrite(AL[cont], LOW); // Garante que os dosadores estão desligados inicialmente
   }
 
   Serial.begin(9600);
 #ifdef AVR
   Wire.begin();
 #else
-  Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
+  Wire1.begin(); // Conecta os pinos I2C à I2C alternativa no Arduino Due
 #endif
   rtc.begin();
 
